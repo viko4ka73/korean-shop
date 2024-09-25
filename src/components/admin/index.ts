@@ -1,8 +1,14 @@
 import ProductForm from "./ProductForm";
 import ProductTable from "./ProductTable";
-import PromotionTable from "./PromotionTable";
+
+import EditProductForm from "./EditProductForm";
+import FeedbackTable from "./FeedbackTable";
+import OrdersTable from "./OrdersTable";
 
 export {
-    ProductForm, ProductTable,
-    PromotionTable
-}
+  ProductForm,
+  ProductTable,
+  EditProductForm,
+  FeedbackTable,
+  OrdersTable,
+};

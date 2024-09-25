@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Product } from "../../api";
 
-const ProductForm: React.FC<{
+const EditProductForm: React.FC<{
   item: Product | null;
   onSubmit: (item: FormData) => void;
   onCancel: () => void;
 }> = ({ item, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<Product>({
-    id: item?.id || "",
+    id: "",
     name: "",
     smallDescription: "",
     description: "",
@@ -22,17 +22,16 @@ const ProductForm: React.FC<{
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Load selected item into formData when item changes
   useEffect(() => {
     if (item) {
       setFormData({
         ...item,
         sale_price: item.sale_price || 0,
-        file: null,
+        file: null, // Do not preload the file field
       });
-      setSelectedFile(null);
-      setImagePreview(null); // Reset image preview when item changes
+      setSelectedFile(null); // Reset the file input field
     }
   }, [item]);
 
@@ -56,47 +55,51 @@ const ProductForm: React.FC<{
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
     setFormData({ ...formData, file });
-
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
-    } else {
-      setImagePreview(null); // Clear preview if no file is selected
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.file && !item) {
-      alert("Файл обязателен для нового товара.");
-      return;
-    }
-
     const data = new FormData();
-    data.append("name", formData.name);
-    data.append("smallDescription", formData.smallDescription);
-    data.append("description", formData.description);
-    data.append("application", formData.application);
-    data.append("structure", formData.structure);
-    data.append("price", formData.price.toString());
-    data.append("type", formData.type);
-    data.append("status", formData.status ? "true" : "false");
-    data.append("is_on_sale", formData.is_on_sale ? "true" : "false");
-    data.append("sale_price", formData.sale_price.toString());
 
-    if (formData.file) {
-      data.append("file", formData.file);
+    const appendToFormData = (key: string, value: any) => {
+      if (value !== undefined && value !== null) {
+        data.append(key, value.toString());
+      }
+    };
+
+    appendToFormData("id", formData.id);
+    appendToFormData("name", formData.name);
+    appendToFormData("smallDescription", formData.smallDescription);
+    appendToFormData("description", formData.description);
+    appendToFormData("application", formData.application);
+    appendToFormData("structure", formData.structure);
+    appendToFormData("price", formData.price);
+    appendToFormData("type", formData.type);
+    appendToFormData("status", formData.status ? "true" : "false");
+    appendToFormData("is_on_sale", formData.is_on_sale ? "true" : "false");
+    appendToFormData("sale_price", formData.sale_price);
+
+    if (selectedFile) {
+      data.append("file", selectedFile);
     }
 
-    console.log(formData);
     onSubmit(data);
   };
 
   return (
     <form onSubmit={handleSubmit} className="mt-4">
-      <h3 className="text-lg font-bold mb-2">
-        {item ? "Обновить товар" : "Добавить товар"}
-      </h3>
+      <h3 className="text-lg font-bold mb-2">Редактировать товар</h3>
+      <input
+        type="text"
+        name="id"
+        value={formData.id}
+        onChange={handleChange}
+        placeholder="ID товара"
+        className="border p-2 mb-2 w-full"
+        required
+        disabled // Disable ID field for editing
+      />
       <input
         type="text"
         name="name"
@@ -104,7 +107,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Название"
         className="border p-2 mb-2 w-full"
-        required
       />
       <textarea
         name="smallDescription"
@@ -112,7 +114,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Краткое описание"
         className="border p-2 mb-2 w-full"
-        required
       />
       <textarea
         name="description"
@@ -120,7 +121,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Описание"
         className="border p-2 mb-2 w-full"
-        required
       />
       <textarea
         name="application"
@@ -128,7 +128,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Применение"
         className="border p-2 mb-2 w-full"
-        required
       />
       <textarea
         name="structure"
@@ -136,7 +135,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Состав"
         className="border p-2 mb-2 w-full"
-        required
       />
       <input
         type="number"
@@ -145,7 +143,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Цена"
         className="border p-2 mb-2 w-full"
-        required
       />
       <input
         type="text"
@@ -154,7 +151,6 @@ const ProductForm: React.FC<{
         onChange={handleChange}
         placeholder="Тип"
         className="border p-2 mb-2 w-full"
-        required
       />
       <label className="block mb-2">
         <input
@@ -163,7 +159,7 @@ const ProductForm: React.FC<{
           checked={formData.status}
           onChange={handleBooleanChange}
         />
-        Новинка
+        Активный
       </label>
       <label className="block mb-2">
         <input
@@ -186,20 +182,10 @@ const ProductForm: React.FC<{
         type="file"
         onChange={handleFileChange}
         className="border p-2 mb-2 w-full"
-        required={!item} // Make file required only for new products
       />
-      {imagePreview && (
-        <div className="mb-2">
-          <img
-            src={imagePreview}
-            alt="Превью изображения"
-            className="w-64 h-64 object-cover"
-          />
-        </div>
-      )}
       <div className="flex space-x-4">
         <button type="submit" className="px-4 py-2 bg-blue-500 text-white">
-          Добавить товар
+          Обновить товар
         </button>
         <button
           type="button"
@@ -213,4 +199,4 @@ const ProductForm: React.FC<{
   );
 };
 
-export default ProductForm;
+export default EditProductForm;
