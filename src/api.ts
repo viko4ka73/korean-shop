@@ -7,7 +7,7 @@ export interface SignInData {
 }
 
 export interface Product {
-  id: string;
+  id?: string;
   name: string;
   smallDescription: string;
   description: string;
@@ -18,10 +18,10 @@ export interface Product {
   status: boolean;
   is_on_sale: boolean;
   sale_price: number;
-  file?: File | null;
+  file: File | null;
 }
 
-export interface Feedback {
+export interface FeedbackData {
   fullname: string;
   email: string;
   description: string;
@@ -75,31 +75,55 @@ export const getProducts = async (): Promise<any[]> => {
   }
 };
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("access_token");
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 // Функция для создания продукта
-export const createProduct = async (formData: FormData): Promise<Product> => {
+export const createProduct = async (formData: Product): Promise<any> => {
   try {
     const token = Cookies.get("access_token");
     if (!token) {
       throw new Error("Token is missing");
     }
+    const url = `${SERVER_API_REMOTE_URL}/product`;
 
-    const response = await axios.post<Product>(
-      `${SERVER_API_REMOTE_URL}/product/`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      }
-    );
-    console.log("Product created successfully:", response.data);
+    const params = new URLSearchParams();
+    params.append("name", formData.name || "");
+    params.append("smallDescription", formData.smallDescription || "");
+    params.append("description", formData.description || "");
+    params.append("application", formData.application || "");
+    params.append("price", formData.price.toString() || "");
+    params.append("structure", formData.structure || "");
+    params.append("type", formData.type || "");
+    params.append("status", formData.status ? "true" : "false");
+    params.append("is_on_sale", formData.is_on_sale ? "true" : "false");
+    params.append("sale_price", formData.sale_price.toString() || "");
+
+    const formPayload = new FormData();
+    if (formData.file) {
+      formPayload.append("file", formData.file);
+    }
+
+    const response: AxiosResponse = await axios.post(url, formPayload, {
+      params,
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "multipart/form-data",
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
     return response.data;
   } catch (error: any) {
     console.error(
       "Error creating product:",
-      error.response?.data || error.message
+      error.response ? error.response.data : error.message
     );
     throw error;
   }
@@ -108,29 +132,54 @@ export const createProduct = async (formData: FormData): Promise<Product> => {
 // Функция для обновления продукта
 export const updateProduct = async (
   id: string,
-  formData: FormData
-): Promise<Product> => {
+  formData: Product
+): Promise<any> => {
   try {
     const token = Cookies.get("access_token");
     if (!token) {
       throw new Error("Token is missing");
     }
-    const response = await axios.put<Product>(
-      `${SERVER_API_REMOTE_URL}/product/${id}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      }
-    );
+    const url = `${SERVER_API_REMOTE_URL}/product/${id}`;
 
-    console.log("Product updated successfully:", response.data);
+    const params = new URLSearchParams();
+    params.append("name", formData.name || "");
+    params.append("smallDescription", formData.smallDescription || "");
+    params.append("description", formData.description || "");
+    params.append("application", formData.application || "");
+    params.append(
+      "price",
+      formData.price !== undefined ? formData.price.toString() : "0"
+    ); // Проверка цены
+    params.append("structure", formData.structure || "");
+    params.append("type", formData.type || "");
+    params.append("status", formData.status ? "true" : "false");
+    params.append("is_on_sale", formData.is_on_sale ? "true" : "false");
+    params.append(
+      "sale_price",
+      formData.sale_price !== undefined ? formData.sale_price.toString() : "0"
+    ); // Проверка sale_price
+
+    const formPayload = new FormData();
+    if (formData.file) {
+      formPayload.append("file", formData.file);
+    }
+
+    const response: AxiosResponse = await axios.put(url, formPayload, {
+      params,
+      headers: {
+        "Content-Type": "multipart/form-data",
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
     return response.data;
-  } catch (error) {
-    console.error("Error updating product:", error);
+  } catch (error: any) {
+    console.error(
+      "Error updating product:",
+      error.response ? error.response.data : error.message
+    );
     throw error;
   }
 };
@@ -161,7 +210,7 @@ export const deleteProduct = async (id: string): Promise<void> => {
 };
 
 // Функция для получения фидбека
-export const getFeedbacks = async (): Promise<Feedback[]> => {
+export const getFeedbacks = async (): Promise<FeedbackData[]> => {
   const token = Cookies.get("access_token");
   if (!token) {
     throw new Error("Token is missing");
@@ -185,6 +234,42 @@ export const getFeedbacks = async (): Promise<Feedback[]> => {
     return data.feedbacks;
   } catch (error) {
     console.error("Error fetching feedbacks:", error);
+    throw error;
+  }
+};
+
+//Отправка фидбека
+export const sendFeedback = async (
+  feedbackData: FeedbackData
+): Promise<any> => {
+  try {
+    const token = Cookies.get("access_token");
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    const url = `${SERVER_API_REMOTE_URL}/feedback/`;
+
+    const params = new URLSearchParams();
+    params.append("fullname", feedbackData.fullname || "");
+    params.append("email", feedbackData.email || "");
+    params.append("description", feedbackData.description || "");
+    params.append("phone", feedbackData.phone || "");
+
+    const response: AxiosResponse = await axios.post(url, params, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "Error sending feedback:",
+      error.response ? error.response.data : error.message
+    );
     throw error;
   }
 };

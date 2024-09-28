@@ -40,46 +40,46 @@ const AdminDashboard = () => {
     fetchProducts();
   }, [isAuthenticated]);
 
-  const handleFormSubmit = async (
-    formData: FormData
-  ): Promise<Product | undefined> => {
-    try {
-      if (!isAuthenticated) {
-        throw new Error("User is not authenticated");
-      }
+  // const handleFormSubmit = async (
+  //   formData: FormData
+  // ): Promise<Product | undefined> => {
+  //   try {
+  //     if (!isAuthenticated) {
+  //       throw new Error("User is not authenticated");
+  //     }
 
-      let response: Product;
+  //     let response: Product;
 
-      if (selectedProduct) {
-        response = await updateProduct(selectedProduct.id, formData);
-      } else {
-        response = await createProduct(formData);
-      }
+  //     if (selectedProduct) {
+  //       response = await updateProduct(selectedProduct.id!, formData);
+  //     } else {
+  //       response = await createProduct(formData);
+  //     }
 
-      if (response) {
-        setProductData((prevData) => {
-          return selectedProduct
-            ? prevData.map((p) => (p.id === selectedProduct.id ? response : p))
-            : [...prevData, response];
-        });
-        setIsEditFormOpen(false);
-        setSelectedProduct(null);
-        setIsCreateFormOpen(false);
-      }
+  //     if (response) {
+  //       setProductData((prevData) => {
+  //         return selectedProduct
+  //           ? prevData.map((p) => (p.id === selectedProduct.id ? response : p))
+  //           : [...prevData, response];
+  //       });
+  //       setIsEditFormOpen(false);
+  //       setSelectedProduct(null);
+  //       setIsCreateFormOpen(false);
+  //     }
 
-      return response;
-    } catch (error: any) {
-      console.error(
-        "Error submitting form:",
-        error.response?.data || error.message
-      );
-      alert(
-        "An error occurred while submitting the form: " +
-          (error.response?.data?.message || error.message)
-      );
-      return undefined;
-    }
-  };
+  //     return response;
+  //   } catch (error: any) {
+  //     console.error(
+  //       "Error submitting form:",
+  //       error.response?.data || error.message
+  //     );
+  //     alert(
+  //       "An error occurred while submitting the form: " +
+  //         (error.response?.data?.message || error.message)
+  //     );
+  //     return undefined;
+  //   }
+  // };
 
   const handleDelete = async (id: string) => {
     try {
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
           </button>
         ))}
       </div>
-      {isCreateFormOpen && (
+      {/* {isCreateFormOpen && (
         <ProductForm
           item={null}
           onSubmit={handleFormSubmit}
@@ -142,14 +142,9 @@ const AdminDashboard = () => {
           onSubmit={handleFormSubmit}
           onCancel={() => setIsEditFormOpen(false)}
         />
-      )}
+      )} */}
       {activeTab === "Товары" && !isEditFormOpen && !isCreateFormOpen && (
-        <ProductTable
-          data={productData}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAddNew={handleAddNew}
-        />
+        <ProductTable />
       )}
 
       {activeTab === "Feedback" && <FeedbackTable />}

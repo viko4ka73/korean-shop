@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DeliveryIcon } from "../../assets";
-import { SERVER_API_REMOTE_URL } from "../../api";
+import { sendFeedback } from "../../api";
 
 const Delivery = () => {
   const [fullname, setFullname] = useState("");
@@ -13,55 +13,26 @@ const Delivery = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Проверка на заполнение обязательных полей
     if (!fullname || !phone || !email || !description) {
-      setError("Все поля обязательны для заполнения.");
+      setError("Пожалуйста, заполните все поля.");
       return;
     }
 
     try {
-      const response = await fetch(`${SERVER_API_REMOTE_URL}/feedback/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullname,
-          phone,
-          email,
-          description,
-        }),
-      });
+      // Отправка фидбека через API
+      await sendFeedback({ fullname, email, description, phone });
+      setSuccess("Сообщение успешно отправлено!");
+      setError("");
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess("Спасибо за ваш отзыв! Мы свяжемся с вами.");
-        setFullname("");
-        setPhone("");
-        setEmail("");
-        setDescription("");
-        setError("");
-      } else {
-        console.error("Ошибка при отправке отзыва:", data);
-
-        if (response.status === 422) {
-          if (data.detail && Array.isArray(data.detail)) {
-            const errorMessages = data.detail
-              .map((err: any) => `${err.loc[1]}: ${err.msg}`)
-              .join(", ");
-            setError(`Ошибка валидации: ${errorMessages}`);
-          } else {
-            setError(
-              "Ошибка валидации данных. Пожалуйста, проверьте введенную информацию."
-            );
-          }
-        } else {
-          setError("Ошибка: Неизвестная ошибка сервера.");
-        }
-      }
+      // Очистка полей после успешной отправки
+      setFullname("");
+      setPhone("");
+      setEmail("");
+      setDescription("");
     } catch (error) {
-      console.error("Ошибка при отправке отзыва:", error);
-      setError("Ошибка при отправке отзыва. Попробуйте снова.");
+      setError("Произошла ошибка при отправке сообщения.");
+      setSuccess("");
     }
   };
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Feedback, getFeedbacks } from "../../api";
+import { FeedbackData, getFeedbacks } from "../../api";
 
 const FeedbackTable: React.FC = () => {
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackData[]>([]);
   const [loading, setLoading] = useState<boolean>(true); // Для отображения индикатора загрузки
   const [error, setError] = useState<string | null>(null); // Для хранения ошибки
 
