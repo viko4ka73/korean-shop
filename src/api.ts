@@ -37,7 +37,6 @@ export interface Order {
   delivery: boolean;
   note: string;
 }
-
 export const SERVER_API_REMOTE_URL = `http://127.0.0.1:8000/api_version_1`;
 
 // Функция для входа
@@ -149,7 +148,7 @@ export const updateProduct = async (
     params.append(
       "price",
       formData.price !== undefined ? formData.price.toString() : "0"
-    ); // Проверка цены
+    );
     params.append("structure", formData.structure || "");
     params.append("type", formData.type || "");
     params.append("status", formData.status ? "true" : "false");
@@ -157,7 +156,7 @@ export const updateProduct = async (
     params.append(
       "sale_price",
       formData.sale_price !== undefined ? formData.sale_price.toString() : "0"
-    ); // Проверка sale_price
+    );
 
     const formPayload = new FormData();
     if (formData.file) {
@@ -238,27 +237,19 @@ export const getFeedbacks = async (): Promise<FeedbackData[]> => {
   }
 };
 
-//Отправка фидбека
-export const sendFeedback = async (
-  feedbackData: FeedbackData
-): Promise<any> => {
+// Функция для создания фидбэка
+export const sendFeedback = async (queryString: string): Promise<any> => {
   try {
     const token = Cookies.get("access_token");
     if (!token) {
       throw new Error("Token is missing");
     }
 
-    const url = `${SERVER_API_REMOTE_URL}/feedback/`;
+    const url = `${SERVER_API_REMOTE_URL}/feedback?${queryString}`;
 
-    const params = new URLSearchParams();
-    params.append("fullname", feedbackData.fullname || "");
-    params.append("email", feedbackData.email || "");
-    params.append("description", feedbackData.description || "");
-    params.append("phone", feedbackData.phone || "");
-
-    const response: AxiosResponse = await axios.post(url, params, {
+    const response: AxiosResponse = await axios.post(url, null, {
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
       withCredentials: true,
@@ -267,7 +258,7 @@ export const sendFeedback = async (
     return response.data;
   } catch (error: any) {
     console.error(
-      "Error sending feedback:",
+      "Error creating feedback:",
       error.response ? error.response.data : error.message
     );
     throw error;
@@ -290,4 +281,36 @@ export const getOrders = async (): Promise<Order[]> => {
 
   const data = await response.json();
   return data.orders;
+};
+
+// Функция для создания заказа
+export const createOrder = async (queryString: string): Promise<any> => {
+  try {
+    const token = Cookies.get("access_token");
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    const url = `${SERVER_API_REMOTE_URL}/orders/?${queryString}`;
+
+    const response: AxiosResponse = await axios.post(url, null, {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error(
+        "Validation errors from backend:",
+        error.response.data.detail
+      );
+    } else {
+      console.error("Error creating order:", error.message);
+    }
+    throw error;
+  }
 };

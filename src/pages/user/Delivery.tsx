@@ -3,37 +3,71 @@ import { DeliveryIcon } from "../../assets";
 import { sendFeedback } from "../../api";
 
 const Delivery = () => {
-  const [fullname, setFullname] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [description, setDescription] = useState("");
+  const [customerInfo, setCustomerInfo] = useState({
+    fullname: "",
+    phone: "",
+    email: "",
+    description: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setCustomerInfo({ ...customerInfo, [name]: value });
+  };
+
+  const handleSubmitFeedback = async () => {
+    try {
+      if (
+        !customerInfo.fullname.trim() ||
+        !customerInfo.phone.trim() ||
+        !customerInfo.email.trim()
+      ) {
+        alert("Пожалуйста, заполните обязательные поля: ФИО, телефон и email.");
+        return;
+      }
+
+      const feedbackData = {
+        fullname: customerInfo.fullname,
+        phone: customerInfo.phone,
+        email: customerInfo.email,
+        description: customerInfo.description || "Без описания",
+      };
+
+      const queryParams = new URLSearchParams({
+        fullname: feedbackData.fullname,
+        phone: feedbackData.phone,
+        email: feedbackData.email,
+        description: feedbackData.description,
+      });
+
+      console.log(
+        "Submitting feedback with query params:",
+        queryParams.toString()
+      );
+
+      await sendFeedback(queryParams.toString());
+
+      setSuccess("Ваше сообщение успешно отправлено!");
+      setError("");
+      setCustomerInfo({
+        fullname: "",
+        phone: "",
+        email: "",
+        description: "",
+      });
+    } catch (error: any) {
+      console.error("Error submitting feedback:", error);
+      alert("Ошибка при отправке сообщения.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Проверка на заполнение обязательных полей
-    if (!fullname || !phone || !email || !description) {
-      setError("Пожалуйста, заполните все поля.");
-      return;
-    }
-
-    try {
-      // Отправка фидбека через API
-      await sendFeedback({ fullname, email, description, phone });
-      setSuccess("Сообщение успешно отправлено!");
-      setError("");
-
-      // Очистка полей после успешной отправки
-      setFullname("");
-      setPhone("");
-      setEmail("");
-      setDescription("");
-    } catch (error) {
-      setError("Произошла ошибка при отправке сообщения.");
-      setSuccess("");
-    }
+    handleSubmitFeedback();
   };
 
   return (
@@ -45,23 +79,24 @@ const Delivery = () => {
             <div className="rounded-3xl bg-white my-16 ml-10 w-1/2">
               <h3 className="text-main font-montserrat text-3xl text-center leading-normal font-bold mt-8">
                 Хотите связаться с нами? <br />
-                Заполните форму и мы вам перезвоним!
+                Заполните форму, и мы вам перезвоним!
               </h3>
-              {error && <div className="text-red-600">{error}</div>}{" "}
-              {/* Error message */}
-              {success && <div className="text-green-600">{success}</div>}{" "}
-              {/* Success message */}
+              {error && <div className="ml-10 mt-5 text-red-600">{error}</div>}
+              {success && (
+                <div className="ml-10 mt-5 text-green-600">{success}</div>
+              )}
               <form className="p-8 flex flex-col" onSubmit={handleSubmit}>
                 <div className="mb-2 flex items-center justify-between">
                   <label className="block text-main-text p-2">
                     <span className="font-montserrat font-medium text-xl leading-none">
-                      Фио
+                      ФИО
                     </span>
                   </label>
                   <input
                     type="text"
-                    value={fullname}
-                    onChange={(e) => setFullname(e.target.value)}
+                    name="fullname"
+                    value={customerInfo.fullname}
+                    onChange={handleInputChange}
                     className="w-[60%] max-xl:w-full border border-purple-text rounded-md py-2 px-3 focus:outline-none focus:border-main-blue"
                   />
                 </div>
@@ -74,8 +109,9 @@ const Delivery = () => {
                   </label>
                   <input
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    name="phone"
+                    value={customerInfo.phone}
+                    onChange={handleInputChange}
                     className="w-[60%] max-xl:w-full border border-purple-text rounded-md py-2 px-3 focus:outline-none focus:border-main-blue"
                   />
                 </div>
@@ -88,8 +124,9 @@ const Delivery = () => {
                   </label>
                   <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    name="email"
+                    value={customerInfo.email}
+                    onChange={handleInputChange}
                     className="w-[60%] max-xl:w-full border border-purple-text rounded-md py-2 px-3 focus:outline-none focus:border-main-blue"
                   />
                 </div>
@@ -101,8 +138,9 @@ const Delivery = () => {
                     </span>
                   </label>
                   <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    name="description"
+                    value={customerInfo.description}
+                    onChange={handleInputChange}
                     className="w-[60%] h-72 max-xl:w-full max-h-72 border border-purple-text rounded-md py-2 px-3 focus:outline-none focus:border-main-blue"
                   ></textarea>
                 </div>

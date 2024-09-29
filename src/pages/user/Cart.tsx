@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useCart } from "../../sections/CartContext";
-import axios from "axios";
-import { SERVER_API_REMOTE_URL } from "../../api";
+import { createOrder } from "../../api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -17,7 +16,7 @@ const Cart = () => {
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCartItems(cart);
-    updateCartCount(); // Update count initially
+    updateCartCount();
   }, [updateCartCount]);
 
   const handleQuantityChange = (index: number, delta: number) => {
@@ -25,7 +24,7 @@ const Cart = () => {
     updatedCart[index].quantity = Math.max(
       (updatedCart[index].quantity || 1) + delta,
       1
-    ); // Ensure minimum quantity is 1
+    );
     setCartItems(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
     updateCartCount();
@@ -59,48 +58,62 @@ const Cart = () => {
   };
 
   const handleOrderSubmit = async () => {
-    const orderItems = cartItems.map((item) => {
-      const total_price = item.price * (item.quantity || 1);
-
-      const orderItem = {
-        product_id: item.product_id,
-        price: Number(item.price),
-        quantity: Number(item.quantity),
-        total_price: total_price,
-        customer_name: customerInfo.fullName || "string",
-        delivery: deliveryMethod === "delivery",
-        note: `${customerInfo.note || "string"}\nТелефон: ${
-          customerInfo.phone
-        }\nАдрес: ${
-          deliveryMethod === "delivery" ? customerInfo.address : "не указан"
-        }`,
-      };
-
-      console.log("Current order item:", orderItem);
-
-      return orderItem;
-    });
-
-    const orderPayload = {
-      order: orderItems,
-    };
-
-    console.log(
-      "Order payload being sent:",
-      JSON.stringify(orderPayload, null, 2)
-    );
-
     try {
-      const response = await axios.post(
-        `${SERVER_API_REMOTE_URL}/orders/`,
-        orderPayload
-      );
-      console.log("Order submitted successfully:", response.data);
-      localStorage.removeItem("cart");
+      if (!customerInfo.fullName.trim() || !customerInfo.phone.trim()) {
+        alert("Пожалуйста, заполните обязательные поля: ФИО и телефон.");
+        return;
+      }
+
+      if (deliveryMethod === "delivery" && !customerInfo.address.trim()) {
+        alert("Пожалуйста, укажите адрес для доставки.");
+        return;
+      }
+
+      for (const item of cartItems) {
+        const total_price = item.price * (item.quantity || 1);
+
+        const addressForNote =
+          deliveryMethod === "delivery"
+            ? customerInfo.address || "Адрес не указан"
+            : "не указан";
+
+        const orderData = {
+          product_id: item.product_id,
+          price: Number(item.price),
+          quantity: Number(item.quantity),
+          total_price: total_price,
+          customer_name: customerInfo.fullName,
+          delivery: deliveryMethod === "delivery",
+          note: `${customerInfo.note || "Без заметок"}\nТелефон: ${
+            customerInfo.phone
+          }\nАдрес: ${addressForNote}`,
+        };
+
+        const queryParams = new URLSearchParams({
+          product_id: orderData.product_id.toString(),
+          price: orderData.price.toString(),
+          quantity: orderData.quantity.toString(),
+          total_price: orderData.total_price.toString(),
+          customer_name: orderData.customer_name,
+          delivery: orderData.delivery.toString(),
+          note: orderData.note,
+        });
+        console.log(
+          "Submitting order with query params:",
+          queryParams.toString()
+        );
+
+        await createOrder(queryParams.toString());
+      }
+
       setCartItems([]);
+      localStorage.removeItem("cart");
       updateCartCount();
+      alert("Заказ успешно оформлен!");
     } catch (error) {
       console.error("Error submitting order:", error);
+
+      alert("Произошла ошибка при оформлении заказа.");
     }
   };
 

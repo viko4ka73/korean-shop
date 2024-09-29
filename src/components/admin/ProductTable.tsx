@@ -6,14 +6,14 @@ import {
   Product,
   deleteProduct,
 } from "../../api";
-import { useAuth } from "../../sections/AuthProvider"; // Пример подключения аутентификации
+import { useAuth } from "../../sections/AuthProvider";
 
 const ProductTable: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // Флаг для редактирования
-  const [currentProductId, setCurrentProductId] = useState<string | null>(null); // ID продукта для редактирования
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
   const [newProduct, setNewProduct] = useState<Product>({
     name: "",
     smallDescription: "",
